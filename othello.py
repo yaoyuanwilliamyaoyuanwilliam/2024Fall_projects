@@ -3,12 +3,17 @@ import matplotlib.patches as patches
 
 
 class HexOthelloVisualizer:
-    def __init__(self, size=5):
+    def __init__(self, size=5, history_type = False):
         self.size = size  
         self.board = {}
         self.players = ["B", "W", "R"]  
+        self.init_pieces = 3
+        self.pieces = {"B" : self.init_pieces, "W" : self.init_pieces,"R" : self.init_pieces}
         self.current_player = 0  
         self.init_board()
+        self.history_type = history_type
+        self.history = {0:{"board":self.board.copy(), "player": self.current_player, "pieces": self.pieces.copy(), }}
+        self.step = 0
 
     def init_board(self):
         for q in range(-self.size, self.size + 2):
@@ -19,9 +24,23 @@ class HexOthelloVisualizer:
         self.board[(0, 0)], self.board[(-1, 2)], self.board[(0, -1)] = "B", "B" , "B"  # black
         self.board[(1, 0)], self.board[(0, 1)], self.board[(3, -1)] = "R", "R", "R"  # red
         self.board[(1, -1)], self.board[(2, -1)], self.board[(0, -2)] = "W", "W", "W"  # white
+    
+    def withdraw(self):
+        if not self.history_type:
+            print("History Off, cannot withdraw")
+            return
+        if self.step == 0:
+            print("Step 0, cannot withdraw")
+            return
+        del self.history[self.step]
+        self.step -= 1
+        step = self.step
+        self.board = self.history[step]["board"]
+        self.current_player = self.history[step]["player"]
+        self.pieces = self.history[step]["pieces"]
 
 
-    def draw_hexagon(self, ax, x, y, color):
+    def nraw_hexagon(self, ax, x, y, color):
         hexagon = patches.RegularPolygon(
             (x, y), numVertices=6, radius=0.5, orientation=0,
             edgecolor="black", facecolor=color
@@ -37,6 +56,7 @@ class HexOthelloVisualizer:
             return "red"  
         return "lightgray"  # empty
 
+    # this render board part completed under the guidance of ChatGPT    
     def render_board(self):
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.set_aspect('equal')
@@ -48,7 +68,7 @@ class HexOthelloVisualizer:
             x = q + r / 2
             y = r * (3**0.5) / 2
             color = self.get_color(value)
-            self.draw_hexagon(ax, x, y, color)
+            self.nraw_hexagon(ax, x, y, color)
 
         plt.show()
 
@@ -58,13 +78,13 @@ class HexOthelloVisualizer:
 
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)] 
         potential_flips = [] 
-        for dq, dr in directions:
+        for nq, nr in directions:
             q, r = position
             found_opponent = False
             current_path = []
             while True:
-                q += dq
-                r += dr
+                q += nq
+                r += nr
                 if (q, r) not in self.board or self.board[(q, r)] == ".":
                     break  
                 if self.board[(q, r)] == player:
@@ -104,6 +124,12 @@ class HexOthelloVisualizer:
         self.board[position] = player
         self.flip_pieces(position, player)
         self.current_player = (self.current_player + 1) % len(self.players)
+        self.step += 1
+        if self.history_type:
+            self.history[self.step] = {}
+            self.history[self.step]["board"] = self.board.copy()
+            self.history[self.step]["player"] = self.current_player
+            self.history[self.step]["pieces"] = self.pieces.copy()
         return True
     
 
@@ -111,12 +137,12 @@ class HexOthelloVisualizer:
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)]  
         to_flip = [] 
 
-        for dq, dr in directions:
+        for nq, nr in directions:
             current_path = [] 
             q, r = position
             while True:
-                q += dq
-                r += dr
+                q += nq
+                r += nr
                 if (q, r) not in self.board or self.board[(q, r)] == ".":
                     break
                 if self.board[(q, r)] == player:
@@ -126,18 +152,19 @@ class HexOthelloVisualizer:
                     current_path.append((q, r))
 
         for q, r in to_flip:
+            self.pieces[self.board[(q, r)]] -= 1
             self.board[(q, r)] = player
+        self.pieces[player] += len(to_flip) + 1
+                
 
 
     def is_game_over(self):
         if all(value != "." for value in self.board.values()):
             return True  
-        
         # if any player has valid moves, then the game goes on
         for player in self.players:
             if self.get_valid_moves(player):  
                 return False  
-
         return True
     
     def get_scores(self):
@@ -196,5 +223,5 @@ class HexOthelloVisualizer:
 
 
 if __name__ == "__main__":
-    O = HexOthelloVisualizer(size=3)  
+    O = HexOthelloVisualizer(size=3, history_type= True)  
     O.play()
