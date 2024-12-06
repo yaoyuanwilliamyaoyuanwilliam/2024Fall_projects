@@ -97,19 +97,13 @@ class HexOthelloVisualizer:
 
         if not potential_flips:
             return False
-
-        simulated_board = self.board.copy()
-        simulated_board[position] = player
+        
+        deled_pieces = self.pieces.copy()
         for q, r in potential_flips:
-            simulated_board[(q, r)] = player
-
-        counts = {p: 0 for p in self.players}
-        for value in simulated_board.values():
-            if value in counts:
-                counts[value] += 1
+            deled_pieces[self.board[(q, r)]] -= 1
 
         for p in self.players:
-            if counts[p] == 0:
+            if deled_pieces[p] == 0:
                 return False 
 
         return True 
