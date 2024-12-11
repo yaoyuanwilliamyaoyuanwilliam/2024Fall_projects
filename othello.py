@@ -215,7 +215,6 @@ class HexOthelloVisualizer:
 
 
 
-
 if __name__ == "__main__":
     O = HexOthelloVisualizer(size=5, history_type= True)  
     O.play()
